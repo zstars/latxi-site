@@ -1,0 +1,70 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Latxi · Borrar cuenta</title>
+<meta name="description" content="Borra tu cuenta de Latxi y el progreso guardado en el servidor.">
+<link rel="canonical" href="https://zstars.github.io/latxi-site/borrar-cuenta/">
+<link rel="icon" type="image/png" href="../privacy/icon-192.png">
+<style>
+:root{--red:#D8352A;--ink:#24232B;--ink2:#5E5B66;--line:#E9E4DA;--bg:#FFFFFF;--green:#0F7A45}
+body{margin:0;background:var(--bg);color:var(--ink);font:17px/1.55 system-ui,-apple-system,"Segoe UI",sans-serif}
+main{max-width:720px;margin:0 auto;padding:32px max(18px,env(safe-area-inset-left))}
+h1{font-size:30px;margin:0 0 4px}h1 span{color:var(--red)}
+h2{font-size:21px;margin:30px 0 6px;border-top:2px solid var(--line);padding-top:22px}
+.muted{color:var(--ink2);font-size:15px}
+nav a{margin-right:14px;color:var(--red);font-weight:700;text-decoration:none}
+#box{margin:22px 0;padding:18px;border:2px solid var(--line);border-radius:16px}
+#status{font-weight:700;margin-top:12px}
+#status.ok{color:var(--green)}#status.err{color:var(--red)}
+</style>
+<script src="https://accounts.google.com/gsi/client" async></script>
+</head>
+<body>
+<main>
+<h1>Latxi<span>.</span></h1>
+<p class="muted">Borrar cuenta · Kontua ezabatu · Delete account</p>
+<nav><a href="#es">Español</a><a href="#eu">Euskara</a><a href="#en">English</a></nav>
+
+<div id="box">
+  <p><b>Entra con la cuenta de Google que usas en Latxi para borrarla.</b><br>
+  <span class="muted">Sartu Latxin erabiltzen duzun Google kontuarekin, hura ezabatzeko. · Sign in with the Google account you use in Latxi to delete it.</span></p>
+  <div id="g_id_onload" data-client_id="554052499318-kgrtbukkj47h8rj5kqdslh6n7jsoq2qq.apps.googleusercontent.com" data-callback="latxiDelete" data-auto_prompt="false"></div>
+  <div class="g_id_signin" data-type="standard" data-text="continue_with" data-locale="es"></div>
+  <p id="status" role="status"></p>
+</div>
+
+<h2 id="es">Español</h2>
+<p>Latxi guarda tu progreso en su servidor solo si entraste con tu cuenta de Google desde el perfil. Al borrar la cuenta se borran en el momento el progreso guardado en el servidor y todas las sesiones abiertas en tus móviles. No guardamos tu email ni tu nombre, así que no queda nada más. Lo que tengas en el móvil no se toca: si quieres, bórralo en el perfil («Borrar mi progreso») o desinstalando la app.</p>
+<p>También puedes borrarla desde la app: Perfil › Tu progreso › Borrar mi cuenta. Las cuentas sin uso durante dos años se borran solas. Si tienes algún problema, escribe a <a href="mailto:luis.rodgi@gmail.com">luis.rodgi@gmail.com</a>. Más detalles en la <a href="../privacy/">política de privacidad</a>.</p>
+
+<h2 id="eu">Euskara</h2>
+<p>Latxik zure aurrerapena bere zerbitzarian gordetzen du profiletik zure Google kontuarekin sartu bazinen bakarrik. Kontua ezabatzean, zerbitzarian gordetako aurrerapena eta zure mugikorretan irekitako saio guztiak une horretan bertan ezabatzen dira. Ez dugu zure emaila ez zure izena gordetzen, beraz ez da ezer gehiago geratzen. Mugikorrean duzuna ez da ukitzen: nahi baduzu, ezabatu profilean («Borrar mi progreso») edo aplikazioa desinstalatuz.</p>
+<p>Aplikaziotik ere ezaba dezakezu: Profila › Tu progreso › Borrar mi cuenta. Bi urtez erabili gabeko kontuak berez ezabatzen dira. Arazoren bat baduzu, idatzi <a href="mailto:luis.rodgi@gmail.com">luis.rodgi@gmail.com</a> helbidera. Xehetasun gehiago <a href="../privacy/">pribatutasun-politikan</a>.</p>
+
+<h2 id="en">English</h2>
+<p>Latxi keeps your progress on its server only if you signed in with your Google account from your profile. Deleting the account immediately deletes the progress stored on the server and every session open on your phones. We don't store your email or your name, so nothing else remains. What is on your phone is not touched: if you want, delete it in your profile («Borrar mi progreso») or by uninstalling the app.</p>
+<p>You can also delete it from the app: Profile › Tu progreso › Borrar mi cuenta. Accounts unused for two years are deleted automatically. If you have any problem, write to <a href="mailto:luis.rodgi@gmail.com">luis.rodgi@gmail.com</a>. More in the <a href="../privacy/">privacy policy</a>.</p>
+</main>
+<script>
+const API = "https://303vhrzx7h.execute-api.eu-west-1.amazonaws.com";
+function show(text, cls) { const s = document.getElementById("status"); s.textContent = text; s.className = cls || ""; }
+async function latxiDelete(response) {
+  if (!confirm("¿Borrar tu cuenta de Latxi y el progreso guardado en el servidor? No se puede deshacer.")) return;
+  show("Borrando…");
+  try {
+    const session = await fetch(API + "/v1/session", { method: "POST", headers: { "content-type": "application/json" },
+      body: JSON.stringify({ idToken: response.credential }) });
+    if (!session.ok) throw new Error("session " + session.status);
+    const { token } = await session.json();
+    const del = await fetch(API + "/v1/account", { method: "DELETE", headers: { authorization: "Bearer " + token } });
+    if (!del.ok) throw new Error("delete " + del.status);
+    show("Hecho: tu cuenta de Latxi y su progreso se han borrado del servidor. · Eginda. · Done.", "ok");
+  } catch (e) {
+    show("No se ha podido borrar (" + e.message + "). Inténtalo de nuevo o escríbenos.", "err");
+  }
+}
+</script>
+</body>
+</html>
