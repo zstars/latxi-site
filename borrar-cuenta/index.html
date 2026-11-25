@@ -18,6 +18,7 @@ nav a{margin-right:14px;color:var(--red);font-weight:700;text-decoration:none}
 #box{margin:22px 0;padding:18px;border:2px solid var(--line);border-radius:16px}
 #status{font-weight:700;margin-top:12px}
 #status.ok{color:var(--green)}#status.err{color:var(--red)}
+#delete{margin-top:6px;padding:12px 18px;border:0;border-radius:12px;background:var(--red);color:#fff;font:700 16px system-ui,sans-serif;cursor:pointer}
 </style>
 <script src="https://accounts.google.com/gsi/client" async></script>
 </head>
@@ -32,6 +33,11 @@ nav a{margin-right:14px;color:var(--red);font-weight:700;text-decoration:none}
   <span class="muted">Sartu Latxin erabiltzen duzun Google kontuarekin, hura ezabatzeko. · Sign in with the Google account you use in Latxi to delete it.</span></p>
   <div id="g_id_onload" data-client_id="554052499318-kgrtbukkj47h8rj5kqdslh6n7jsoq2qq.apps.googleusercontent.com" data-callback="latxiDelete" data-auto_prompt="false"></div>
   <div class="g_id_signin" data-type="standard" data-text="continue_with" data-locale="es"></div>
+  <div id="confirm" hidden>
+    <p><b>¿Borrar tu cuenta de Latxi y el progreso guardado en el servidor? No se puede deshacer.</b><br>
+    <span class="muted">Ezabatu Latxiko kontua eta zerbitzarian gordetako aurrerapena? · Delete your Latxi account and the progress stored on the server?</span></p>
+    <button id="delete" type="button">Borrar mi cuenta · Ezabatu · Delete</button>
+  </div>
   <p id="status" role="status"></p>
 </div>
 
@@ -50,21 +56,30 @@ nav a{margin-right:14px;color:var(--red);font-weight:700;text-decoration:none}
 <script>
 const API = "https://303vhrzx7h.execute-api.eu-west-1.amazonaws.com";
 function show(text, cls) { const s = document.getElementById("status"); s.textContent = text; s.className = cls || ""; }
-async function latxiDelete(response) {
-  if (!confirm("¿Borrar tu cuenta de Latxi y el progreso guardado en el servidor? No se puede deshacer.")) return;
+let idToken = null;
+function latxiDelete(response) {
+  idToken = response.credential;
+  document.getElementById("confirm").hidden = false;
+  show("");
+}
+document.getElementById("delete").addEventListener("click", async () => {
+  if (!idToken) return;
+  document.getElementById("delete").disabled = true;
   show("Borrando…");
   try {
     const session = await fetch(API + "/v1/session", { method: "POST", headers: { "content-type": "application/json" },
-      body: JSON.stringify({ idToken: response.credential }) });
+      body: JSON.stringify({ idToken }) });
     if (!session.ok) throw new Error("session " + session.status);
     const { token } = await session.json();
     const del = await fetch(API + "/v1/account", { method: "DELETE", headers: { authorization: "Bearer " + token } });
     if (!del.ok) throw new Error("delete " + del.status);
     show("Hecho: tu cuenta de Latxi y su progreso se han borrado del servidor. · Eginda. · Done.", "ok");
   } catch (e) {
-    show("No se ha podido borrar (" + e.message + "). Inténtalo de nuevo o escríbenos.", "err");
+    show("No se ha podido borrar (" + e.message + "). Vuelve a entrar con Google e inténtalo de nuevo, o escríbenos.", "err");
   }
-}
+  document.getElementById("confirm").hidden = true;
+  idToken = null;
+});
 </script>
 </body>
 </html>
